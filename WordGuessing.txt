@@ -1,0 +1,134 @@
+/* This program is a word-guessing game. The player must guess a randomly chosen word one letter at a time.
+The player will win if they correctly guess every letter. The player will lose if they run out of chances to guess letters.
+The number of chances the player gets is calculated depending on the selected word.
+The player loses one chance for every incorrectly-guessed letter. */
+
+#include <iostream>
+#include <vector>
+#include <stdlib.h>
+using namespace std;
+
+//This function calculates the number of chances the player gets. It accounts for the length of the wordand the number of common consonants, vowels, and uncommon consonants.
+int CalcGuesses(string specialWord) {
+    int ez = 0;         //Counts the number of common consonants and vowels
+    int hard = 0;       //Counts the number of rare letters
+    int i;              //Used in the for loop
+    for (i = 0; i < specialWord.size(); ++i) {
+        if (specialWord.at(i) == 'R' || specialWord.at(i) == 'S' || specialWord.at(i) == 'T' || specialWord.at(i) == 'L' || specialWord.at(i) == 'N') {         //Check for common consonants
+            ++ez;
+        }
+        if (specialWord.at(i) == 'A' || specialWord.at(i) == 'E' || specialWord.at(i) == 'I' || specialWord.at(i) == 'O' || specialWord.at(i) == 'U') {         //Check for vowels
+            ++ez;
+        }
+        if (specialWord.at(i) == 'X' || specialWord.at(i) == 'V' || specialWord.at(i) == 'Z' || specialWord.at(i) == 'Q' || specialWord.at(i) == 'J') {         //Check for uncommon consonants
+            ++hard;
+        }
+    }
+    //The following calculations use precentages. A higher precentage means a harder word.
+    double precentEZ = 1.0 - ((ez * 1.0) / (specialWord.size() * 1.0));                //The precentage of "easy" letters (common consonants and vowels) is taken and inverted so that a higher precentage means that the word is harder.
+    double precentHard = (hard * 1.0 ) / (specialWord.size() * 1.0);                   //The precentage of "hard" letters (uncommon consonants) is taken.
+    double wordLengthEffect = ((specialWord.size() * 1.0) - 3) * 0.10;                //10% was added for every letter of the word past 3.
+    double difficultyAverage = (precentEZ + precentHard + wordLengthEffect) / 3.0;    //The average of the three precentages were taken.
+    double chances = 4 + (difficultyAverage * 20.0);                                  //The base number of guesses is 4, then more are added based on the difficulty precentage. These numbers were determined through testing.
+    return chances;
+}
+
+int main()
+{
+    vector<string> word(20);        //list of possible words
+    word.at(0) = "CHILLING";
+    word.at(1) = "AMONG";
+    word.at(2) = "SUSPICIOUS";
+    word.at(3) = "RULES";
+    word.at(4) = "ENGINEER";
+    word.at(5) = "HORIZON";
+    word.at(6) = "LIGHT";
+    word.at(7) = "VENT";
+    word.at(8) = "PHANTOM";
+    word.at(9) = "IMPOSTOR";
+    word.at(10) = "REACTOR";
+    word.at(11) = "BANANA";
+    word.at(12) = "WINDOW";
+    word.at(13) = "LONG";
+    word.at(14) = "TUNNEL";
+    word.at(15) = "OUTSIDE";
+    word.at(16) = "YARD";
+    word.at(17) = "PALACE";
+    word.at(18) = "TICKET";
+    word.at(19) = "DISRUPTION";
+
+    string secret;                              //word that needs to be guessed
+    srand(time(NULL));                          //randomly select word with a random number generator
+    int which = rand() % 19;
+    secret = word.at(which);
+
+    vector<string> blanks;                      //line of blank spaces that will be displayed to the player
+    int i;                                      //used in for loops
+    blanks.resize(secret.size());                //set up the line of blanks
+    for (i = 0; i < secret.size(); ++i) {
+        blanks.at(i) = "_";
+        cout << blanks.at(i) << " ";
+    }
+
+    system("COLOR 1F");                              //Background color is blue by default
+
+    char guess;                                     //The player's guessed letter
+    vector<char> guessRecord(0);                     //keeps a record of the player's guesses to prevent them from guessing the same letter multiple times
+    bool duplicate;
+    int numGuesses = CalcGuesses(secret);            //number of guesses determined by the function
+    bool correct;                                    //was the player's guess correct?
+    int winCondition = 0;                           //counts correctly guessed letters. The player wins if this number reaches the size of the selected word
+    while (numGuesses > 0 && winCondition < secret.size()) {            //Game will continue as long as the player does not run out of guesses or correctly guess every letter
+        duplicate = false;                                      //initialize
+        correct = false;
+        cout << endl << "Guess a letter. Capital letters only. " << numGuesses << " chances remaining: ";
+        
+        cin >> guess;                                   //check the record for duplicates
+        for (i = 0; i < guessRecord.size(); ++i) {
+            if (guess == guessRecord.at(i)) {
+                duplicate = true;
+            }
+        }
+        while (duplicate == true) {             //If the player repeats a guess, they will be stuck in this loop until they guess a new letter.
+            system("COLOR 8F");                 //Background turns grey
+            cout << "You already guessed that letter. You still have " << numGuesses << " chances remaining. Try again: ";
+            cin >> guess;
+            for (i = 0; i < guessRecord.size(); ++i) {
+                if (guess == guessRecord.at(i)) {
+                    duplicate = true;
+                    break;
+                }
+                else {
+                    duplicate = false;
+                }
+            }
+        }
+        for (i = 0; i < secret.size(); ++i) {       //checks if guess is correct. Replaces corresponding blank if necessary.
+            if (guess == secret.at(i)) {
+                blanks.at(i) = guess;
+                correct = true;
+                ++winCondition;
+                guessRecord.push_back(guess);       //letter is added to the record
+                system("COLOR 2F");                 //background turns green if guess is correct
+            }
+        }
+        for (i = 0; i < secret.size(); ++i) {        //The updated set of blanks will be printed so that the player can see their progress, if any
+            cout << blanks.at(i) << " ";
+        }
+        if (correct == false) {             //reduces number of chances left by one if guess is incorrect
+            guessRecord.push_back(guess);
+            --numGuesses;
+            system("COLOR 4F");             //background turns red if guess is incorrect
+        }
+    }
+    if (winCondition == secret.size()) {            //happens if the player wins
+        cout << endl << endl << "Congratualtions! You won with " << numGuesses << " chances remaining!" << endl << endl;
+        system("COLOR 6F");                 //color turns yellow if player wins
+    }
+    else {
+        cout << endl << endl << "You lose :(" << endl;      //happens if the player loses
+        cout << "Your word was " << secret << endl;         //The player will be told what their word was.
+        system("COLOR 0F");                 //color turns black if player loses
+    }
+    return 0;
+}
